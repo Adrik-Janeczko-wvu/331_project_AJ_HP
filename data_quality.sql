@@ -21,3 +21,9 @@ orphaned_orders AS (
     LEFT JOIN customers c ON o.customer_id = c.customer_id
     WHERE c.customer_id IS NULL
 )
+-- Displaying the final table by unioning the created tables together.
+SELECT * FROM table_counts
+UNION ALL
+SELECT * FROM null_checks
+UNION ALL
+SELECT * FROM orphaned_orders;
