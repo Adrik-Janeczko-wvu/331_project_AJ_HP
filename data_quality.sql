@@ -1,3 +1,5 @@
+-- creating cte's for each of the characteristics required for the data quality audit. Using these ctes to show the overall quality of the data set in an easier manner
+
 WITH
 
 -- counting rows per table by creating unions to put together
@@ -36,7 +38,7 @@ null_rates AS (
     FROM order_items
 ),
 
---checking for ophan keys 
+--checking for orphan keys no customer id or order id
 orphan_checks AS (
    
     SELECT 
@@ -96,7 +98,56 @@ date_gaps AS (
     FROM all_dates d
     LEFT JOIN actual_dates a ON d.date = a.date
     WHERE a.date IS NULL
+),
+
+-- showing duplication within the dataset 
+duplicates AS (
+    SELECT 
+        'duplicates' AS section,
+        'duplicate_order_ids' AS metric,
+        CAST(COUNT(*) AS VARCHAR) AS value
+    FROM (
+        SELECT order_id
+        FROM orders
+        GROUP BY order_id
+        HAVING COUNT(*) > 1 -- count more than 1 shows that an item is a duplicate
+    )
+
+    UNION ALL
+
+    SELECT 
+        'duplicates',
+        'duplicate_customer_ids',
+        CAST(COUNT(*) AS VARCHAR)
+    FROM (
+        SELECT customer_id
+        FROM customers
+        GROUP BY customer_id
+        HAVING COUNT(*) > 1
+    )
+),
+
+-- shwoing any anomolies within the dataset
+anomalies AS (
+    -- negative or zero prices
+    SELECT 
+        'anomalies' AS section,
+        'non_positive_prices' AS metric,
+        CAST(COUNT(*) AS VARCHAR) AS value
+    FROM order_items
+    WHERE price <= 0
+
+    UNION ALL
+
+    -- delivery before purchase
+    SELECT 
+        'anomalies',
+        'delivery_before_purchase',
+        CAST(COUNT(*) AS VARCHAR)
+    FROM orders
+    WHERE order_delivered_customer_date < order_purchase_timestamp
 )
+    
 SELECT * FROM table_counts
 UNION ALL
 SELECT * FROM null_rates
@@ -106,3 +157,9 @@ UNION ALL
 SELECT * FROM date_ranges
 UNION ALL
 SELECT * FROM date_gaps
+UNION ALL
+SELECT * FROM duplicates
+UNION ALL
+SELECT * FROM anomalies
+
+ORDER BY section, metric
