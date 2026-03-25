@@ -21,4 +21,6 @@ aggregated AS (
     FROM delivery_times
     GROUP BY customer_state
 )
-
+SELECT * -- show the final table and order by delay
+FROM aggregated
+ORDER BY delay DESC;
