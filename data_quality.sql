@@ -45,8 +45,8 @@ orphan_checks AS (
         'orphan_checks' AS section,
         'orders_without_customer' AS metric,
         CAST(COUNT(*) AS VARCHAR) AS value
-    FROM orders o
-    LEFT JOIN customers c ON o.customer_id = c.customer_id
+    FROM orders as o
+    LEFT JOIN customers as c ON o.customer_id = c.customer_id
     WHERE c.customer_id IS NULL
 
     UNION ALL
@@ -55,8 +55,8 @@ orphan_checks AS (
         'orphan_checks',
         'order_items_without_order',
         CAST(COUNT(*) AS VARCHAR)
-    FROM order_items oi
-    LEFT JOIN orders o ON oi.order_id = o.order_id
+    FROM order_items as oi
+    LEFT JOIN orders as o ON oi.order_id = o.order_id
     WHERE o.order_id IS NULL
 ),
 
@@ -95,8 +95,8 @@ date_gaps AS (
         'date_gaps' AS section,
         'missing_days_count' AS metric,
         CAST(COUNT(*) AS VARCHAR) AS value
-    FROM all_dates d
-    LEFT JOIN actual_dates a ON d.date = a.date
+    FROM all_dates as d
+    LEFT JOIN actual_dates as a ON d.date = a.date
     WHERE a.date IS NULL
 ),
 
@@ -147,7 +147,7 @@ anomalies AS (
     FROM orders
     WHERE order_delivered_customer_date < order_purchase_timestamp
 )
-    
+    -- final select statement bringing all of the CTEs together
 SELECT * FROM table_counts
 UNION ALL
 SELECT * FROM null_rates
