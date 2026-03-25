@@ -22,3 +22,24 @@ WITH product_revenue AS (
     WHERE o.order_status = 'delivered'
     GROUP BY oi.product_id, p.product_category_name
 ),
+revenue_ranked AS (
+    -- Rank products by revenue descending and compute cumulative running total
+    SELECT
+        product_id,
+        product_category_name,
+        total_revenue,
+        SUM(total_revenue) OVER () AS grand_total,
+        SUM(total_revenue) OVER (ORDER BY total_revenue DESC) AS running_total
+    FROM product_revenue
+),
+
+revenue_pct AS (
+    -- Express each product's running total as a percentage of grand total
+    SELECT
+        product_id,
+        product_category_name,
+        total_revenue,
+        ROUND(total_revenue * 100.0 / grand_total, 4) AS revenue_pct,
+        ROUND(running_total * 100.0 / grand_total, 4) AS cumulative_pct
+    FROM revenue_ranked
+)
