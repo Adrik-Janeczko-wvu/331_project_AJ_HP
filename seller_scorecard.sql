@@ -39,9 +39,9 @@ reviews AS (
 -- final select for the final table. joining all three ctes onto one table and using rank feature
 SELECT 
     r.seller_id,
-    r.total_revenue,
-    d.avg_delivery_days,
-    rv.avg_review_score,
+    ROUND(r.total_revenue, 2) AS total_revenue,
+    ROUND(d.avg_delivery_days, 2) AS avg_delivery_days,
+    ROUND(rv.avg_review_score, 2) AS avg_review_score,
     RANK() OVER (ORDER BY r.total_revenue DESC) AS revenue_rank
 FROM revenue as r
 LEFT JOIN delivery as d USING (seller_id)
