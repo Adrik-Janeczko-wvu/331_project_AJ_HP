@@ -11,8 +11,8 @@ WITH customer_first_purchase AS (
     SELECT
         c.customer_unique_id,
         MIN(DATE_TRUNC('month', o.order_purchase_timestamp)) AS cohort_month
-    FROM orders o
-    JOIN customers c ON o.customer_id = c.customer_id
+    FROM orders AS o
+    JOIN customers AS c ON o.customer_id = c.customer_id
     WHERE o.order_status = 'delivered'
     GROUP BY c.customer_unique_id
 ),
@@ -22,8 +22,8 @@ customer_purchases AS (
     SELECT
         c.customer_unique_id,
         DATE_TRUNC('month', o.order_purchase_timestamp) AS purchase_month
-    FROM orders o
-    JOIN customers c ON o.customer_id = c.customer_id
+    FROM orders AS o
+    JOIN customers AS c ON o.customer_id = c.customer_id
     WHERE o.order_status = 'delivered'
 ),
 cohort_time_deltas AS (
@@ -45,3 +45,20 @@ cohort_sizes AS (
     FROM customer_first_purchase
     GROUP BY cohort_month
 )
+
+-- Pivot: count distinct customers who returned at months 1 through 3
+-- CASE WHEN returns the id only when the condition is met, NULL otherwise
+-- COUNT(DISTINCT CASE WHEN ... ) then counts only the non-null values
+SELECT
+    s.cohort_month,
+    s.initial_customers,
+    COUNT(DISTINCT CASE WHEN d.month_number = 1 THEN d.customer_unique_id END) AS retained_m1_count,
+    ROUND(COUNT(DISTINCT CASE WHEN d.month_number = 1 THEN d.customer_unique_id END) * 100.0 / s.initial_customers, 2) AS retained_m1_pct,
+    COUNT(DISTINCT CASE WHEN d.month_number = 2 THEN d.customer_unique_id END) AS retained_m2_count,
+    ROUND(COUNT(DISTINCT CASE WHEN d.month_number = 2 THEN d.customer_unique_id END) * 100.0 / s.initial_customers, 2) AS retained_m2_pct,
+    COUNT(DISTINCT CASE WHEN d.month_number = 3 THEN d.customer_unique_id END) AS retained_m3_count,
+    ROUND(COUNT(DISTINCT CASE WHEN d.month_number = 3 THEN d.customer_unique_id END) * 100.0 / s.initial_customers, 2) AS retained_m3_pct
+FROM cohort_sizes s
+JOIN cohort_time_deltas d ON s.cohort_month = d.cohort_month
+GROUP BY s.cohort_month, s.initial_customers
+ORDER BY s.cohort_month;
