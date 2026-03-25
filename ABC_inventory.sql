@@ -43,3 +43,18 @@ revenue_pct AS (
         ROUND(running_total * 100.0 / grand_total, 4) AS cumulative_pct
     FROM revenue_ranked
 )
+
+-- Assign tiers: A = top 80%, B = next 15%, C = bottom 5%
+SELECT
+    product_id,
+    product_category_name,
+    ROUND(total_revenue, 2) AS total_revenue,
+    revenue_pct,
+    cumulative_pct,
+    CASE
+        WHEN cumulative_pct <= 80 THEN 'A'
+        WHEN cumulative_pct <= 95 THEN 'B'
+        ELSE 'C'
+    END AS abc_tier
+FROM revenue_pct
+ORDER BY total_revenue DESC;
